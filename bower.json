@@ -1,0 +1,11 @@
+{
+  "name": "mycity",
+  "version": "0.0.1",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "console-polyfill": "0.2.1",
+    "es5-shim": "4.1.10",
+    "html5shiv": "3.7.3"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules
+*.sw[po]
+build/js
+build/app.*
+build/bbox.csv
+build/summary.csv
+build/test-*
+build/common.js
+bower_components
+npm-debug.log
+**.DS_Store

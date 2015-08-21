@@ -1,0 +1,72 @@
+@mixin panel() {
+  background: #fff;
+  border-radius: 4px;
+  padding: 8px;
+  box-shadow: rgba(0, 0, 0, 0.65098) 0px 1px 5px 0px;
+  font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+  font-size: 13px;
+}
+@mixin animate-left() {
+  transition: left 0.27s;
+  transition-timing-function: cubic-bezier(0.8,0,0.8,1);
+}
+
+.leaflet-zoom-animated g path:hover { fill: #fff; }
+
+.hidden {
+  visibility: hidden;
+}
+
+body, html {
+  margin: 0px;
+  padding: 0px;
+}
+
+.map {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  width: 100%;
+  bottom: 0px;
+}
+
+#sidebar {
+  @include panel();
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  /* Needs to be quite high for IE */
+  z-index: 100001;
+}
+
+#sidebar.slide-out {
+  @include animate-left(); 
+  left: -350px;
+}
+
+#sidebar.slide-in {
+  @include animate-left(); 
+  left: 10px;
+}
+
+#loading {
+  @include panel();
+  $height: 60px;
+  position: absolute;
+  /* Needs to be quite high for IE */
+  z-index: 100000;
+  top: 20px;
+  left: 50%;
+  width: 200px;
+  margin-left: -100px;
+  text-align: center;
+  height: $height;
+  line-height: $height;
+}
+
+ul#priorities {
+  list-style-type: none;
+  margin: 0px;
+  padding: 0px;
+}
