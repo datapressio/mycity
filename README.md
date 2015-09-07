@@ -118,7 +118,7 @@ Sample app:
     <div id="app"></div>
     <script>
       mycity.run({
-        onClickOA: function(event, oa, lsoa, subLayer, summary, boundaries) {
+        handleFeatureClick: function(event, oa, lsoa, subLayer, summary, boundaries) {
           alert('Popup');
         }
       });
@@ -177,7 +177,7 @@ getPopupData(oa).then(function(data) {
 });
 ~~~
 
-In addition to the `onClickOA` setting used in `mycity.run()` there are the following config options, with this as their default values. You can set any of these variables to customise the app:
+In addition to the `handleFeatureClick` setting used in `mycity.run()` there are the following config options, with this as their default values. You can set any of these variables to customise the app:
 
 ~~~
 {
@@ -203,6 +203,7 @@ In addition to the `onClickOA` setting used in `mycity.run()` there are the foll
       background: '#db6b66',
     }
   },
+  logo: 'logo.png',
   summaryURL: 'http://files.datapress.io/london/dataset/mylondon/summary.csv',
   summaryPrimaryColName: 'OA',
   colors: [
@@ -230,8 +231,8 @@ In addition to the `onClickOA` setting used in `mycity.run()` there are the foll
   bboxURL: 'http://files.datapress.io/london/dataset/mylondon/bbox-lsoa.csv',
   bboxPrimaryColName: 'lsoa',
   geoJSONBaseURL: 'http://geojson.datapress.io.s3.amazonaws.com/data/',
-  onClickOA: function(event, oa, lsoa, subLayer, summary, boundaries) {
-    alert('No onClickOA() function in the config')
+  handleFeatureClick: function(event, oa, lsoa, subLayer, summary, boundaries) {
+    alert('No handleFeatureClick() function in the config')
   },
   App: App,
   defaults: {

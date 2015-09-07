@@ -32,6 +32,7 @@ var Shader = function(url, colName, colors, defaultOpacity, budgetColor, budgetO
   self.modifierConfig = modifierConfig;
 
   self.data = undefined;
+  self.sortedData = undefined; // Cache when calculating ranks
   self.buckets = undefined;
   self.mapAPI = undefined;
 
@@ -90,6 +91,48 @@ Shader.prototype.registerMapAPI = function(event) {
   self.expectedMap = 0;
 };
 
+Shader.prototype.calculateIndividualRankings = function(themesToValue) {
+  var self = this;
+  // Prepare the result structure
+  if (typeof self.sortedData === 'undefined') {
+    self.sortedData = {};
+  }
+  // Add in data for each theme we care about, if it is missing
+  for (var theme in themesToValue) {
+    if (themesToValue.hasOwnProperty(theme)) {
+      if (typeof self.sortedData[theme] === "undefined") {
+        console.log('Generating rank order for '+theme);
+        self.sortedData[theme] = [];
+        for (var oa in self.data) {
+          if (self.data.hasOwnProperty(oa)) {
+            self.sortedData[theme].push(parseFloat(self.data[oa][theme]))
+          }
+        }
+        self.sortedData[theme].sort();
+      }
+    }
+  }
+  // Iterate over the sorted data to find the position of our value
+  var results = {}
+  for (var theme in themesToValue) {
+    if (themesToValue.hasOwnProperty(theme)) {
+      results[theme]={'max': self.sortedData[theme].length};
+      for (var i=0; i<self.sortedData[theme].length; i++) {
+        // console.log(i, themesToValue[theme], self.sortedData[theme][i]);
+        if (themesToValue[theme] > self.sortedData[theme][i]) {
+          results[theme]['pos'] = i;
+        } else {
+          break;
+        }
+        if (typeof results[theme] === 'undefined') {
+          console.error('Could not find the value "'+themesToValue[theme]+'" in the data for '+theme);
+        }
+      }
+    }
+  }
+  return results;
+};
+
 Shader.prototype.calculateRankings = function(event) {
   var self = this;
   // We rely on the summary data having already been set in previous callbacks
@@ -99,7 +142,7 @@ Shader.prototype.calculateRankings = function(event) {
     return;
   }
   console.info('Calculating rankings');
-  
+
   self.lastEvent = null;
   var cardsWithModifierWeightings = addModifierWeightings(event.theme, self.modifierConfig);
   // console.info('Data', self.data['E00021772']);
@@ -209,7 +252,7 @@ Shader.prototype._shadeOA = function(oa, sub_layer) {
 }
 
 
-var BBox = function(url, colName, basePolygonURL, handleFeatureClick, shadePolygon, getClickData) {
+var BBox = function(url, colName, basePolygonURL, handleFeatureClick, shadePolygon, getClickData, calculateIndividualRankings) {
   var self = this;
   // Config
   self.url = url;
@@ -218,6 +261,7 @@ var BBox = function(url, colName, basePolygonURL, handleFeatureClick, shadePolyg
   self.handleFeatureClick = handleFeatureClick;
   self.getClickData = getClickData;
   self.shadePolygon = shadePolygon;
+  self.calculateIndividualRankings = calculateIndividualRankings;
 
   // Props
   self.obtainedChunks = null;
@@ -261,13 +305,13 @@ BBox.prototype.handleNewProps = function(props) {
   if (self.data) {
     self.obtainedChunks(props.id, 'bbox.data', self.expectedData);
   } else {
-    self.obtainedChunks(props.id, 'bbox.data', 0); 
+    self.obtainedChunks(props.id, 'bbox.data', 0);
   }
   self.setNumChunks(props.id, 'bbox.map', self.expectedMap);
   if (self.data) {
     self.obtainedChunks(props.id, 'bbox.map', self.expectedMap);
   } else {
-    self.obtainedChunks(props.id, 'bbox.map', 0); 
+    self.obtainedChunks(props.id, 'bbox.map', 0);
   }
 };
 
@@ -392,7 +436,8 @@ BBox.prototype.makeFetchTask = function(lsoa, startBBox) {
             self.mapAPI.register(lsoa, data, function(event, lsoa, subLayer) {
               var data = self.getClickData();
               var oa = subLayer.feature.properties['OA11CD'];
-              return self.handleFeatureClick(event, oa, lsoa, subLayer, data.summary, data.boundaries);
+
+              return self.handleFeatureClick(event, oa, lsoa, subLayer, data.summary, data.boundaries, self.calculateIndividualRankings);
             });
             if (self.shadePolygon) {
               // console.log('Shading the polygon');
@@ -454,13 +499,13 @@ var App = React.createClass({
   hideControls: function(e) {
     var self = this;
     e.preventDefault();
-    self.props.setState({controls: false}); 
+    self.props.setState({controls: false});
   },
 
   render: function() {
     var self = this;
     var sidebarClass = '';
-    console.log(self.props.changeState) 
+    console.log(self.props.changeState)
     if ('controls' in self.props.changeState) {
       if (self.props.state.controls) {
         sidebarClass = 'slide-in'
@@ -471,21 +516,22 @@ var App = React.createClass({
     return (
       <div className="app">
         <Controls className={sidebarClass}>
-          <a onClick={self.hideControls}>Hide</a>
+          <img className="logo" src={self.props.logo} />
+          <a className="mycity-sidebar-hide" onClick={self.hideControls}>Hide</a>
           <Postcode
             setState={self.props.setState}
-          />
-          <Themes
-            cards={self.props.cards}
-            order={self.props.state.theme}
-            disabledBackground={'rgb(77, 77, 77);'}
-            onSort={self.handleSort}
           />
           <BudgetSlider
             id={self.props.id}
             budget={self.props.state.budget}
             onSlide={self.handleSetBudget}
             description={self.handleUpdateBudgetSliderDescription}
+          />
+          <Themes
+            cards={self.props.cards}
+            order={self.props.state.theme}
+            disabledBackground={'rgb(77, 77, 77);'}
+            onSort={self.handleSort}
           />
         </Controls>
         <Map
@@ -510,9 +556,9 @@ var App = React.createClass({
   }
 });
 
-var getFromDataStore = function(apiServer, resourceName, key, oa) {
+var getFromDataStore = function(apiServer, resourceName, key, oa, resource_ids) {
   var filter = {};
-  filter[key] = oa; 
+  filter[key] = oa;
   var url = apiServer+'/api/3/action/datastore_search?resource_id='+encodeURIComponent(
     resource_ids[resourceName]
   )+'&filters='+encodeURIComponent(
@@ -562,6 +608,7 @@ var defaultConfig = {
     'rgb(77,146,33)',
     'rgb(39,100,25)',
   ],
+  logo: 'logo.png',
   opacity: 0.4,
   budgetColor: 'rgba(0,0,0,1)',
   budgetOpacity: 0.5,
@@ -574,8 +621,8 @@ var defaultConfig = {
   bboxURL: 'http://files.datapress.io/london/dataset/mylondon/bbox-lsoa.csv',
   bboxPrimaryColName: 'lsoa',
   geoJSONBaseURL: 'http://geojson.datapress.io.s3.amazonaws.com/data/',
-  onClickOA: function(event, oa, lsoa, subLayer, summary, boundaries) {
-    alert('No onClickOA() function in the config')
+  handleFeatureClick: function(event, oa, lsoa, subLayer, summary, boundaries) {
+    alert('No handleFeatureClick() function in the config')
   },
   App: App,
   defaults: {
@@ -593,7 +640,7 @@ var defaultConfig = {
 var run = function(configChanges) {
   var config = {};
   for (var k in defaultConfig) {
-    if (defaultConfig.hasOwnProperty(k)) { 
+    if (defaultConfig.hasOwnProperty(k)) {
       if (typeof configChanges[k] === "undefined") {
         config[k] = defaultConfig[k];
       } else {
@@ -611,14 +658,15 @@ var run = function(configChanges) {
     config.budgetOpacity,
     config.modifierWeightings
   )
-  
+
   var bbox = new BBox(
     config.bboxURL,
     config.bboxPrimaryColName,
     config.geoJSONBaseURL,
-    config.onClickOA,
+    config.handleFeatureClick,
     function(id) {shader.shadePolygon(id);},
-    function() {return {summary: shader.data, boundaries: shader.boundaries};}
+    function() {return {summary: shader.data, boundaries: shader.boundaries};},
+    function(themes) {return shader.calculateIndividualRankings(themes)}
   );
 
   var app = appHash(
@@ -636,6 +684,7 @@ var run = function(configChanges) {
       // Config
       props['cards'] = config.cards;
       props['tileURL'] = config.tileURL;
+      props['logo'] = config.logo;
       console.log('about to render');
       var component = React.createElement(
         config.App,

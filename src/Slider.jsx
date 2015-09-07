@@ -102,7 +102,7 @@ var SliderJsSlider = React.createClass({
   render: function() {
     var description = this.props.description(this.state.value);
     return (
-      <div>
+      <div className="mycity-slider-text">
         {description}
         <div ref="slider"/>
       </div>

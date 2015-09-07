@@ -20,7 +20,7 @@ var PostcodeNavigation = React.createClass({
   render: function() {
     return (
       <div id="postcode">
-        <form onSubmit={this.handleSubmit}><input type="text" ref="postcode" /></form>
+        <form onSubmit={this.handleSubmit}><input type="text" ref="postcode" placeholder="Postcode" /></form>
       </div>
     );
   }

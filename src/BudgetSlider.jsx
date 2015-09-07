@@ -7,7 +7,7 @@ var BudgetSlider = React.createClass({
   render: function() {
     var self = this;
     return (
-      <div>
+      <div className="mycity-slider">
         <Slider
           id={self.props.id}
           description={self.props.description}
