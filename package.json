@@ -12,7 +12,7 @@
     "bootstrap-slider": "4.5.2",
     "bower": "1.4.1",
     "jquery": "2.1.4",
-    "leaflet": "^0.7.3",
+    "leaflet": "^0.7.5",
     "native-promise-only": "0.8.0-a",
     "react": "0.13.1",
     "react-bootstrap": "0.20.2",

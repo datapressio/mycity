@@ -268,6 +268,7 @@ var BBox = function(url, colName, basePolygonURL, handleFeatureClick, shadePolyg
   self.setNumChunks = null;
   self.id = null;
   self.lastBBox = null;
+  self.setState = null;
 
   // Init State
   self.data = undefined;
@@ -297,6 +298,7 @@ BBox.prototype.handleNewProps = function(props) {
   // console.info('Set props' , props.id);
   self.obtainedChunks = props.obtainedChunks;
   self.setNumChunks = props.setNumChunks;
+  self.setState = props.setState;
   self.id = props.id;
   console.info('Setting bbox percentage', self.expected, self.fetched);
   self.setNumChunks(props.id, 'bbox', self.expected);
@@ -312,6 +314,24 @@ BBox.prototype.handleNewProps = function(props) {
     self.obtainedChunks(props.id, 'bbox.map', self.expectedMap);
   } else {
     self.obtainedChunks(props.id, 'bbox.map', 0);
+  }
+  if (self.data && self.mapAPI && props.state.oa !== '' && self.oa !== props.state.oa) {
+    self.oa = props.state.oa;
+    var data = self.getClickData();
+    self.handleFeatureClick(
+      null,
+      self.oa,
+      null,
+      null,
+      data.summary,
+      data.boundaries,
+      self.calculateIndividualRankings,
+      function() {
+        self.setState({oa: ''});
+      }
+    );
+  } else {
+    self.oa = props.state.oa;
   }
 };
 
@@ -344,6 +364,7 @@ BBox.prototype.registerMapAPI = function(event) {
 
 BBox.prototype.fetchAndRenderPolygons = function(event) {
   var self = this;
+
   // We rely on the bbox, data, and lsoaColName having already been set in previous callbacks
   if (typeof self.data === "undefined" || typeof self.mapAPI === "undefined") {
     console.info('Cannot plot yet!', self.data, self.mapAPI);
@@ -355,6 +376,7 @@ BBox.prototype.fetchAndRenderPolygons = function(event) {
   // everything is already loaded.
   // console.log(event);
   self.lastEvent = null;
+
   // Create a copy of the variable for the closure
   var curBBox = self.curBBox = event.bbox.join(',');
   // Perform the calculation
@@ -406,6 +428,21 @@ BBox.prototype.fetchAndRenderPolygons = function(event) {
       self.fetched = 0;
       self.expected = 0;
     }
+    if (self.oa) {
+      var data = self.getClickData();
+      return self.handleFeatureClick(
+        null,
+        self.oa,
+        null,
+        null,
+        data.summary,
+        data.boundaries,
+        self.calculateIndividualRankings,
+        function() {
+          self.setState({oa: ''});
+        }
+      );
+    }
   }).catch(alert);
   console.log('To show:', status.hidden);
   for (var i=0; i<status.hidden.length; i++) {
@@ -436,8 +473,19 @@ BBox.prototype.makeFetchTask = function(lsoa, startBBox) {
             self.mapAPI.register(lsoa, data, function(event, lsoa, subLayer) {
               var data = self.getClickData();
               var oa = subLayer.feature.properties['OA11CD'];
-
-              return self.handleFeatureClick(event, oa, lsoa, subLayer, data.summary, data.boundaries, self.calculateIndividualRankings);
+              self.setState({oa: oa});
+              return self.handleFeatureClick(
+                event,
+                oa,
+                lsoa,
+                subLayer,
+                data.summary,
+                data.boundaries,
+                self.calculateIndividualRankings,
+                function() {
+                  self.setState({oa: ''});
+                }
+              );
             });
             if (self.shadePolygon) {
               // console.log('Shading the polygon');
@@ -534,8 +582,12 @@ var App = React.createClass({
             onSort={self.handleSort}
           />
         </Controls>
+        <Loading
+          registerPercentage={self.props.registerPercentage}
+        />
+        <Popup />
         <Map
-          attribution={null}
+          attribution={self.props.attribution}
           onMapCreated={self.props.onMapCreated}
           onViewChange={self.handleMapViewChange}
           onBBoxChanged={self.props.onBBoxChanged}
@@ -547,10 +599,6 @@ var App = React.createClass({
           id={self.props.id}
           tileURL={self.props.tileURL}
         />
-        <Loading
-          registerPercentage={self.props.registerPercentage}
-        />
-        <Popup />
       </div>
     );
   }
@@ -641,11 +689,12 @@ var run = function(configChanges) {
   var config = {};
   for (var k in defaultConfig) {
     if (defaultConfig.hasOwnProperty(k)) {
-      if (typeof configChanges[k] === "undefined") {
-        config[k] = defaultConfig[k];
-      } else {
-        config[k] = configChanges[k];
-      }
+      config[k] = defaultConfig[k];
+    }
+  }
+  for (var k in configChanges) {
+    if (configChanges.hasOwnProperty(k)) {
+      config[k] = configChanges[k];
     }
   }
   console.log(config);
@@ -685,6 +734,7 @@ var run = function(configChanges) {
       props['cards'] = config.cards;
       props['tileURL'] = config.tileURL;
       props['logo'] = config.logo;
+      props['attribution'] = config.attribution;
       console.log('about to render');
       var component = React.createElement(
         config.App,
