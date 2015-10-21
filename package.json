@@ -16,7 +16,7 @@
     "native-promise-only": "0.8.0-a",
     "react": "0.13.1",
     "react-bootstrap": "0.20.2",
-    "react-bootstrap-slider": "0.0.5",
+    "react-bootstrap-slider": "git+https://github.com/jarsbe/react-bootstrap-slider.git",
     "sortablejs": "^1.2.0",
     "state-utils": "0.0.6"
   },
