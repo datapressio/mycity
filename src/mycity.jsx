@@ -643,7 +643,7 @@ var defaultConfig = {
       background: '#db6b66',
     }
   },
-  summaryURL: 'http://data.london.gov.uk/dataset/mylondon/'+summary_resource_id+'/download/summary.csv',
+  summaryURL: 'http://data.london.gov.uk/dataset/mylondon/resource/'+summary_resource_id+'/download/summary.csv',
   summaryPrimaryColName: 'OA',
   colors: [
     'rgb(142,1,82)',
