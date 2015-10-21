@@ -1,3 +1,5 @@
+var summary_resource_id = "a72ae909-56d1-4e2a-9d37-8abb0260775a";
+
 var React = require('react');
 var Controls = require('./Controls');
 var Postcode = require('./Postcode');
@@ -641,7 +643,7 @@ var defaultConfig = {
       background: '#db6b66',
     }
   },
-  summaryURL: 'http://files.datapress.io/london/dataset/mylondon/summary.csv',
+  summaryURL: 'http://data.london.gov.uk/dataset/mylondon/'+summary_resource_id+'/download/summary.csv',
   summaryPrimaryColName: 'OA',
   colors: [
     'rgb(142,1,82)',
